@@ -31,10 +31,9 @@
     <div>Endpoint:</div>
     <input id="APIEndpoint" type="Text" style="width: 20%" />
 
-    <!--
     <div>API Key</div>
     <input id="Key" type="Text" style="width:20%" />
-    -->
+    
 
 
     <script>
@@ -50,21 +49,21 @@
                 endpoint = "http://localhost:1234/v1/chat/completions"
             }
         }
-//        function setKey(){
-//            console.log("setting key")
-//            ApiKey = document.getElementById("Key").value
-//            if (ApiKey == ""){
-//                console.log("Setting default key")
-//                ApiKey = "N/A"
-//            }
-//        }
+        function setKey(){
+            console.log("setting key")
+            ApiKey = document.getElementById("Key").value
+            if (ApiKey == ""){
+                console.log("Setting default key")
+                ApiKey = "N/A"
+            }
+        }
 
         let history = [
             {"content": systemPrompt, "fullContent": systemPrompt, "role": "system"},
         ];
 
         async function sendMessage() {
-            // setKey()
+            setKey()
             setEndpoint()
             const inputField = document.getElementById('input');
             const message = inputField.value;
