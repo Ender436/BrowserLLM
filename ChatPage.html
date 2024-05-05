@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat with AI</title>
+    <style>
+        #chat {
+            height: 400px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow: auto;
+        }
+        .user, .assistant {
+            margin-bottom: 10px;
+        }
+
+        .Settings {
+        margin-top: 40px;
+        margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat"></div>
+    <input id="input" type="text" style="width: 80%;" />
+    <button onclick="sendMessage()">Send</button>
+    
+    <div class="Settings">
+        <b>Settings:</b>
+    </div>
+
+    <div>Endpoint:</div>
+    <input id="APIEndpoint" type="Text" style="width: 20%" />
+
+    <!--
+    <div>API Key</div>
+    <input id="Key" type="Text" style="width:20%" />
+    -->
+
+
+    <script>
+        let endpoint = ""
+        let ApiKey = "N/A"
+        let systemPrompt = "You are a helpful, smart, kind, and efficient AI assistant. You always fulfill the user's requests to the best of your ability."
+
+        function setEndpoint(){
+            console.log("setting endpoint")
+            endpoint = document.getElementById("APIEndpoint").value
+            if (endpoint == ""){
+                console.log("Setting default endpoint")
+                endpoint = "http://localhost:1234/v1/chat/completions"
+            }
+        }
+//        function setKey(){
+//            console.log("setting key")
+//            ApiKey = document.getElementById("Key").value
+//            if (ApiKey == ""){
+//                console.log("Setting default key")
+//                ApiKey = "N/A"
+//            }
+//        }
+
+        let history = [
+            {"content": systemPrompt, "fullContent": systemPrompt, "role": "system"},
+        ];
+
+        async function sendMessage() {
+            // setKey()
+            setEndpoint()
+            const inputField = document.getElementById('input');
+            const message = inputField.value;
+            inputField.value = '';
+
+            if (message.trim() !== '') {
+                history.push({"content": message, "role": "user", "fullContent": message});
+                console.log('Added user message:', history); // Log the updated history
+                updateChat();
+                // ... send the request
+            }
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': ApiKey
+                },
+                body: JSON.stringify({
+                    model: 'YOUR_MODEL_ID',
+                    messages: history.map(message => ({role: message.role, content: message.fullContent})),
+                    temperature: 0.7,
+                    stream: true
+                })
+            });
+            const reader = response.body.getReader();
+            let chunks = '';
+            reader.read().then(function processText({ done, value }) {
+                if (done) {
+                    return;
+                }
+                const chunk = new TextDecoder("utf-8").decode(value);
+                console.log('Received chunk:', chunk);
+                const events = chunk.split('\n\n');
+                for (const event of events) {
+                    if (event.startsWith('data: ')) {
+                        const jsonStr = event.slice(5);
+                        try {
+                            const data = JSON.parse(jsonStr);
+                            console.log('Parsed data:', data);
+                            if (data.choices && data.choices[0]) {
+                                const choice = data.choices[0];
+                                if (choice && choice.delta) {
+                                    const assistantMessage = choice.delta.content;
+                                    console.log('Assistant message:', assistantMessage);
+                                    if (assistantMessage !== undefined) { // Add this check
+                                        if (history[history.length - 1].role === 'assistant') {
+                                            console.log('Updating assistant message...');
+                                            newTokens = assistantMessage;
+                                            history[history.length - 1].content += newTokens;
+                                            history[history.length - 1].fullContent += newTokens;
+                                        } else {
+                                            console.log('Adding new assistant message...');
+                                            history.push({"role": "assistant", "content": assistantMessage, "fullContent": assistantMessage});
+                                        }
+                                        updateChat();
+                                    }
+                                } else {
+                                    console.log('No message in choice:', choice);
+                                }
+                            } else {
+                                console.log('No choices in server response:', data);
+                            }
+                        } catch (e) {
+                            if (e instanceof SyntaxError) {
+                                continue;
+                            } else {
+                                throw e;
+                            }
+                        }
+                    }
+                }
+                return reader.read().then(processText);
+            });
+        }
+
+        function updateChat() {
+            console.log('Updating chat...'); // Log a message to the console
+            const chatDiv = document.getElementById('chat');
+            chatDiv.innerHTML = '';
+            history.forEach(message => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = message.role;
+                messageDiv.innerHTML = `<b>${message.role}:</b> ${message.content}`; // Use content instead of fullContent
+                chatDiv.appendChild(messageDiv);
+            });
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+        updateChat();
+    </script>
+</body>
+</html>
