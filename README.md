@@ -1,1 +1,1 @@
-This is primarily meant to be used with something like LMStudio's API endpoint, but should work with any openai replacement API server. It should even work with the official OpenAI API, you will just need to enter in your api key.
+This is primarily meant to be used with something like LM Studio's API endpoint, but should work with any openai replacement API server. It should even work with the official OpenAI API, you will just need to enter in your api key.
