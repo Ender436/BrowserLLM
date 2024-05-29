@@ -33,6 +33,10 @@
 
     <div>API Key</div>
     <input id="Key" type="Text" style="width:20%" />
+
+    <div>Model</div>
+    <input id="Model" type="Text" style="width:20%"/>
+    <button onclick="listModels()">List available models</button>
     
 
 
@@ -43,7 +47,7 @@
 
         function setEndpoint(){
             console.log("setting endpoint")
-            endpoint = document.getElementById("APIEndpoint").value
+            endpoint = `http://${document.getElementById("APIEndpoint").value}:1234/v1/chat/completions`
             if (endpoint == ""){
                 console.log("Setting default endpoint")
                 endpoint = "http://localhost:1234/v1/chat/completions"
@@ -58,10 +62,32 @@
             }
         }
 
-        function listModels(){
-            const models = fetch("http://100.114.216.17:1234/v1/models", {
-                method: 'GET'
-            })
+        async function listModels() {
+            try {
+                const response = await fetch(`http://${document.getElementById("APIEndpoint").value}:1234/v1/models`, {
+                    method: 'GET'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const data = await response.json(); // Parse the response as JSON
+                const models = data.data.map(model => model.id).join(', ');
+                //window.alert(JSON.stringify(data, null, 2))
+                window.alert(`Models: ${models}`); // Display the JSON data
+            } catch (error) {
+                window.alert('Failed to fetch models: ' + error.message);
+            }
+        }
+
+        function setModel() {
+            console.log("setting model")
+            model = document.getElementById("Model").value
+            if (model == ""){
+                console.log("Setting model to default")
+                model = "DEFAULT"
+            }
         }
 
         let history = [
@@ -71,6 +97,7 @@
         async function sendMessage() {
             setKey()
             setEndpoint()
+            setModel()
             const inputField = document.getElementById('input');
             const message = inputField.value;
             inputField.value = '';
@@ -88,7 +115,7 @@
                     'Authorization': ApiKey
                 },
                 body: JSON.stringify({
-                    model: 'YOUR_MODEL_ID',
+                    model: model,
                     messages: history.map(message => ({role: message.role, content: message.fullContent})),
                     temperature: 0.7,
                     stream: true
