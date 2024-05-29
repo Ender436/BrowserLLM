@@ -58,6 +58,12 @@
             }
         }
 
+        function listModels(){
+            const models = fetch("http://100.114.216.17:1234/v1/models", {
+                method: 'GET'
+            })
+        }
+
         let history = [
             {"content": systemPrompt, "fullContent": systemPrompt, "role": "system"},
         ];
